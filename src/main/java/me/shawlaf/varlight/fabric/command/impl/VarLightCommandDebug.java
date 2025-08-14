@@ -9,16 +9,17 @@ import me.shawlaf.varlight.fabric.command.VarLightCommand;
 import me.shawlaf.varlight.fabric.command.VarLightSubCommand;
 import me.shawlaf.varlight.fabric.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.fabric.util.OpPermissionLevel;
-import me.shawlaf.varlight.util.ChunkCoords;
-import me.shawlaf.varlight.util.IntPosition;
-import me.shawlaf.varlight.util.RegionCoords;
+import me.shawlaf.varlight.util.pos.ChunkPosition;
+import me.shawlaf.varlight.util.pos.IntPosition;
+import me.shawlaf.varlight.util.pos.RegionCoords;
+import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.entity.Entity;
+import net.minecraft.registry.Registries;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.*;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
 
 import java.util.List;
 import java.util.function.ToIntFunction;
@@ -53,11 +54,11 @@ public class VarLightCommandDebug extends VarLightSubCommand {
     }
 
     @Override
-    public LiteralArgumentBuilder<ServerCommandSource> build(LiteralArgumentBuilder<ServerCommandSource> root) {
-        suggestCoordinate(ARG_REGION_X, e -> e.chunkX >> 5);
-        suggestCoordinate(ARG_REGION_Z, e -> e.chunkZ >> 5);
-        suggestCoordinate(ARG_CHUNK_X, e -> e.chunkX);
-        suggestCoordinate(ARG_CHUNK_Z, e -> e.chunkZ);
+    public LiteralArgumentBuilder<ServerCommandSource> build(LiteralArgumentBuilder<ServerCommandSource> root, CommandRegistryAccess registryAccess) {
+        suggestCoordinate(ARG_REGION_X, e -> e.getChunkPos().getRegionX());
+        suggestCoordinate(ARG_REGION_Z, e -> e.getChunkPos().getRegionZ());
+        suggestCoordinate(ARG_CHUNK_X, e -> e.getChunkPos().z);
+        suggestCoordinate(ARG_CHUNK_Z, e -> e.getChunkPos().z);
 
         root.requires(scs -> scs.hasPermissionLevel(OpPermissionLevel.MANAGE_GAME));
 
@@ -100,7 +101,7 @@ public class VarLightCommandDebug extends VarLightSubCommand {
     }
 
     private int executeStick(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        context.getSource().sendError(new LiteralText("not yet implemented!"));
+        context.getSource().sendError(Text.literal("not yet implemented!"));
 
         return -1;
     }
@@ -109,12 +110,12 @@ public class VarLightCommandDebug extends VarLightSubCommand {
         Entity entity = context.getSource().getEntity();
 
         if (entity == null) {
-            context.getSource().sendError(new LiteralText("You must be a Player to use this command."));
+            context.getSource().sendError(Text.literal("You must be a Player to use this command."));
             return -1;
         }
 
-        int regionX = entity.chunkX >> 5;
-        int regionZ = entity.chunkZ >> 5;
+        int regionX = entity.getChunkPos().getRegionX();
+        int regionZ = entity.getChunkPos().getRegionZ();
 
         return listRegion(context.getSource(), regionX, regionZ, 1);
     }
@@ -129,27 +130,27 @@ public class VarLightCommandDebug extends VarLightSubCommand {
     private int listRegion(ServerCommandSource source, int regionX, int regionZ, int page) {
         RegionCoords regionCoords = new RegionCoords(regionX, regionZ);
         List<IntPosition> lightSources;
-
-        lightSources = mod.getLightStorageManager().getManager(source.getWorld()).getNLSFile(regionCoords).getAllLightSources();
-
-        List<IntPosition> pageList = VarLightCommand.paginateEntries(lightSources, PAGE_SIZE, page);
-        int pages = VarLightCommand.getAmountPages(lightSources, PAGE_SIZE);
-
-        source.sendFeedback(new LiteralText(String.format("Amount of Light sources in Region [%d, %d]: %d (Showing Page %d / %d)", regionX, regionZ, lightSources.size(), Math.min(page, pages), pages)), false);
-
-        return listLightSources(source, pageList);
+        throw new RuntimeException("Not implemented!"); // TODO
+//        lightSources = mod.getLightStorageManager().getManager(source.getWorld()).getNLSFile(regionCoords).getAllLightSources();
+//
+//        List<IntPosition> pageList = VarLightCommand.paginateEntries(lightSources, PAGE_SIZE, page);
+//        int pages = VarLightCommand.getAmountPages(lightSources, PAGE_SIZE);
+//
+//        source.sendFeedback(() -> Text.literal(String.format("Amount of Light sources in Region [%d, %d]: %d (Showing Page %d / %d)", regionX, regionZ, lightSources.size(), Math.min(page, pages), pages)), false);
+//
+//        return listLightSources(source, pageList);
     }
 
     private int listChunkImplicit(CommandContext<ServerCommandSource> context) {
         Entity entity = context.getSource().getEntity();
 
         if (entity == null) {
-            context.getSource().sendError(new LiteralText("You must be a player to use this command!"));
+            context.getSource().sendError(Text.literal("You must be a player to use this command!"));
             return -1;
         }
 
-        int chunkX = entity.chunkX;
-        int chunkZ = entity.chunkZ;
+        int chunkX = entity.getChunkPos().x;
+        int chunkZ = entity.getChunkPos().z;
 
         return listChunk(context.getSource(), chunkX, chunkZ, 1);
     }
@@ -162,23 +163,23 @@ public class VarLightCommandDebug extends VarLightSubCommand {
     }
 
     private int listChunk(ServerCommandSource source, int chunkX, int chunkZ, int page) {
-        ChunkCoords chunkCoords = new ChunkCoords(chunkX, chunkZ);
-
-        List<IntPosition> lightSources = mod.getLightStorageManager().getManager(source.getWorld()).getNLSFile(chunkCoords.toRegionCoords()).getAllLightSources(chunkCoords);
-
-        List<IntPosition> pageList = VarLightCommand.paginateEntries(lightSources, PAGE_SIZE, page);
-        int pages = VarLightCommand.getAmountPages(lightSources, PAGE_SIZE);
-
-        source.sendFeedback(new LiteralText(String.format("Amount of Light sources in Chunk [%d, %d]: %d (Showing Page %d / %d)", chunkX, chunkZ, lightSources.size(), Math.min(page, pages), pages)), false);
-
-        return listLightSources(source, pageList);
+        ChunkPosition chunkCoords = new ChunkPosition(chunkX, chunkZ);
+        throw new RuntimeException("Not implemented!"); // TODO
+//        List<IntPosition> lightSources = mod.getLightStorageManager().getManager(source.getWorld()).getNLSFile(chunkCoords.toRegionCoords()).getAllLightSources(chunkCoords);
+//
+//        List<IntPosition> pageList = VarLightCommand.paginateEntries(lightSources, PAGE_SIZE, page);
+//        int pages = VarLightCommand.getAmountPages(lightSources, PAGE_SIZE);
+//
+//        source.sendFeedback(() -> Text.literal(String.format("Amount of Light sources in Chunk [%d, %d]: %d (Showing Page %d / %d)", chunkX, chunkZ, lightSources.size(), Math.min(page, pages), pages)), false);
+//
+//        return listLightSources(source, pageList);
     }
 
     private int listLightSources(ServerCommandSource source, List<IntPosition> page) {
         WorldLightSourceManager manager = mod.getLightStorageManager().getManager(source.getWorld());
 
         for (IntPosition ls : page) {
-            source.sendFeedback(generateText(source.getWorld(), ls, manager.getCustomLuminance(ls, 0)), false);
+            source.sendFeedback(() -> generateText(source.getWorld(), ls, manager.getCustomLuminance(ls, 0)), false);
         }
 
         return page.size();
@@ -189,16 +190,16 @@ public class VarLightCommandDebug extends VarLightSubCommand {
 
         locationStyle.withFormatting(Formatting.GREEN); // Returns a new instance of Style
 
-        locationStyle.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText("Click to Teleport.")));
-        locationStyle.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, String.format("/tp @s %d %d %d", lightSource.x, lightSource.y, lightSource.z)));
+        locationStyle.withHoverEvent(new HoverEvent.ShowText(Text.literal("Click to Teleport.")));
+        locationStyle.withClickEvent(new ClickEvent.RunCommand(String.format("/tp @s %d %d %d", lightSource.x(), lightSource.y(), lightSource.z())));
 
-        return new LiteralText(lightSource.toShortString())
+        return Text.literal(lightSource.toShortString())
                 .setStyle(locationStyle)
                 .append(
-                        new LiteralText(String.format(" (%s)", Registry.BLOCK.getId(world.getBlockState(new BlockPos(lightSource.x, lightSource.y, lightSource.z)).getBlock()).toString()))
+                        Text.literal(String.format(" (%s)", Registries.BLOCK.getId(world.getBlockState(new BlockPos(lightSource.x(), lightSource.y(), lightSource.z())).getBlock())))
                                 .formatted(Formatting.GREEN)
                                 .append(
-                                        new LiteralText(" = " + lightLevel)
+                                        Text.literal(" = " + lightLevel)
                                                 .formatted(Formatting.GREEN)
                                 )
                 );

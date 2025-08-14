@@ -1,7 +1,7 @@
 package me.shawlaf.varlight.fabric.persistence.nbt;
 
-import net.minecraft.nbt.ByteTag;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtByte;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 
@@ -28,16 +28,16 @@ public class VarLightPlayerData implements INbtSerializable {
 
     @Override
     public Identifier getKey() {
-        return new Identifier("varlight", "player_data");
+        return Identifier.of("varlight", "player_data");
     }
 
     @Override
-    public void writeToTag(CompoundTag tag) {
-        tag.put("stepSize", ByteTag.of(stepSize));
+    public void writeToTag(NbtCompound tag) {
+        tag.put("stepSize", NbtByte.of(stepSize));
     }
 
     @Override
-    public void readFromTag(CompoundTag tag) {
-        this.stepSize = tag.getByte("stepSize");
+    public void readFromTag(NbtCompound tag) {
+        this.stepSize = tag.getByte("stepSize", (byte) 1);
     }
 }

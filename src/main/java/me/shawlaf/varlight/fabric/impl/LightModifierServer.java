@@ -6,7 +6,6 @@ import me.shawlaf.varlight.fabric.VarLightMod;
 import me.shawlaf.varlight.fabric.persistence.WorldLightSourceManager;
 import me.shawlaf.varlight.fabric.util.ReflectionHelper;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.packet.s2c.play.LightUpdateS2CPacket;
 import net.minecraft.server.world.ServerLightingProvider;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
@@ -33,7 +32,7 @@ public class LightModifierServer implements ILightModifier {
     @SuppressWarnings("unchecked")
     @Override
     public LightUpdateResult setLuminance(PlayerEntity modifier, ServerWorld world, BlockPos blockPos, int lightLevel, boolean doLightUpdate) {
-        if (modifier != null && !world.canPlayerModifyAt(modifier, blockPos)) {
+        if (modifier != null && !world.canEntityModifyAt(modifier, blockPos)) {
             return LightUpdateResult.CANNOT_MODIFY;
         }
 
@@ -80,16 +79,17 @@ public class LightModifierServer implements ILightModifier {
     public void updateLight(ServerWorld world, ChunkPos chunkPos) {
         LightingProvider provider = world.getLightingProvider();
 
-        ((ServerLightingProvider) provider).light(world.getChunk(chunkPos.x, chunkPos.z), false).thenRun(() -> {
-            mod.getScheduledTaskManager().enqueue(() -> {
-                for (ChunkPos pos : collectNeighbouringChunks(chunkPos)) {
-                    LightUpdateS2CPacket packet = new LightUpdateS2CPacket(pos, provider, true);
-
-                    world.getChunkManager().threadedAnvilChunkStorage.getPlayersWatchingChunk(pos, false).forEach(spe -> {
-                        spe.networkHandler.sendPacket(packet);
-                    });
-                }
-            });
-        });
+        throw new RuntimeException("Not implemented"); // TODO
+//        ((ServerLightingProvider) provider).light(world.getChunk(chunkPos.x, chunkPos.z), false).thenRun(() -> {
+//            mod.getScheduledTaskManager().enqueue(() -> {
+//                for (ChunkPos pos : collectNeighbouringChunks(chunkPos)) {
+//                    LightUpdateS2CPacket packet = new LightUpdateS2CPacket(pos, provider, true);
+//
+//                    world.getChunkManager().threadedAnvilChunkStorage.getPlayersWatchingChunk(pos, false).forEach(spe -> {
+//                        spe.networkHandler.sendPacket(packet);
+//                    });
+//                }
+//            });
+//        });
     }
 }

@@ -6,30 +6,21 @@ import me.shawlaf.varlight.fabric.util.WorldBlockPosTuple;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemConvertible;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.loot.context.LootContext;
-import net.minecraft.loot.context.LootContextParameters;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Mixin(Block.class)
@@ -55,7 +46,7 @@ public abstract class BlockMixin implements ItemConvertible {
         if (ll > 0) {
             LightUpdateResult result = VarLightMod.INSTANCE.getLightModifier().setLuminance(
                     placer instanceof ServerPlayerEntity ? (ServerPlayerEntity) placer : null,
-                    (ServerWorld) placer.world,
+                    (ServerWorld) placer.getWorld(),
                     pos,
                     ll
             );
@@ -66,23 +57,24 @@ public abstract class BlockMixin implements ItemConvertible {
         }
     }
 
-    @Inject(
-            method = "onBreak(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;Lnet/minecraft/entity/player/PlayerEntity;)V",
-            at = @At("HEAD")
-    )
-    public void beforeOnBreak(World world, BlockPos pos, BlockState state, PlayerEntity player, CallbackInfo ci) {
-        if (world.isClient) {
-            return;
-        }
-
-        ServerWorld serverWorld = (ServerWorld) world;
-
-        int customLuminance = getMod().getLightStorageManager().getManager(serverWorld).getCustomLuminance(pos, 0);
-
-        if (customLuminance > 0) {
-            lightCache.put(WorldBlockPosTuple.of(serverWorld, pos), customLuminance);
-        }
-    }
+    // TODO
+//    @Inject(
+//            method = "onBreak(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;Lnet/minecraft/entity/player/PlayerEntity;)V",
+//            at = @At("HEAD")
+//    )
+//    public void beforeOnBreak(World world, BlockPos pos, BlockState state, PlayerEntity player, CallbackInfo ci) {
+//        if (world.isClient) {
+//            return;
+//        }
+//
+//        ServerWorld serverWorld = (ServerWorld) world;
+//
+//        int customLuminance = getMod().getLightStorageManager().getManager(serverWorld).getCustomLuminance(pos, 0);
+//
+//        if (customLuminance > 0) {
+//            lightCache.put(WorldBlockPosTuple.of(serverWorld, pos), customLuminance);
+//        }
+//    }
 
     @Inject(
             method = "afterBreak(Lnet/minecraft/world/World;Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;Lnet/minecraft/block/entity/BlockEntity;Lnet/minecraft/item/ItemStack;)V",

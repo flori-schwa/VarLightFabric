@@ -1,15 +1,13 @@
 package me.shawlaf.varlight.fabric;
 
-import net.minecraft.network.MessageType;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 
 public abstract class LightUpdateResult {
 
     public static final LightUpdateResult CANNOT_MODIFY = new LightUpdateResult() {
 
-        private final Text message = new LiteralText("You cannot modify blocks in that area.");
+        private final Text message = Text.literal("You cannot modify blocks in that area.");
 
         @Override
         public boolean isSuccess() {
@@ -24,7 +22,7 @@ public abstract class LightUpdateResult {
 
     public static final LightUpdateResult ILLEGAL_BLOCK = new LightUpdateResult() {
 
-        private final Text message = new LiteralText("That Block cannot be turned into a Light Source.");
+        private final Text message = Text.literal("That Block cannot be turned into a Light Source.");
 
         @Override
         public boolean isSuccess() {
@@ -39,7 +37,7 @@ public abstract class LightUpdateResult {
 
     public static final LightUpdateResult ZERO_REACHED = new LightUpdateResult() {
 
-        private final Text message = new LiteralText("Cannot set Light Level below Zero.");
+        private final Text message = Text.literal("Cannot set Light Level below Zero.");
 
         @Override
         public boolean isSuccess() {
@@ -55,7 +53,7 @@ public abstract class LightUpdateResult {
 
     public static final LightUpdateResult FIFTEEN_REACHED = new LightUpdateResult() {
 
-        private final Text message = new LiteralText("Cannot set Light Level above Fifteen.");
+        private final Text message = Text.literal("Cannot set Light Level above Fifteen.");
 
         @Override
         public boolean isSuccess() {
@@ -78,7 +76,7 @@ public abstract class LightUpdateResult {
 
             @Override
             public Text getMessage() {
-                return new LiteralText("Updated Light Level to " + lightLevel);
+                return Text.literal("Updated Light Level to " + lightLevel);
             }
         };
     }

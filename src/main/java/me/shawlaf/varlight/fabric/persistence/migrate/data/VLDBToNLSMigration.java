@@ -1,11 +1,11 @@
 package me.shawlaf.varlight.fabric.persistence.migrate.data;
 
-import me.shawlaf.varlight.persistence.BasicCustomLightSource;
 import me.shawlaf.varlight.persistence.migrate.Migration;
 import me.shawlaf.varlight.persistence.nls.NLSFile;
-import me.shawlaf.varlight.persistence.vldb.VLDBInputStream;
-import me.shawlaf.varlight.persistence.vldb.VLDBUtil;
-import me.shawlaf.varlight.util.FileUtil;
+import me.shawlaf.varlight.persistence.old.BasicCustomLightSource;
+import me.shawlaf.varlight.persistence.old.vldb.VLDBInputStream;
+import me.shawlaf.varlight.persistence.old.vldb.VLDBUtil;
+import me.shawlaf.varlight.util.io.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,7 +48,7 @@ public class VLDBToNLSMigration implements Migration<File> {
                 }
             }
 
-            nlsFile.saveAndUnload();
+            nlsFile.save();
             in.close();
         }
 

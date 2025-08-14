@@ -3,14 +3,13 @@ package me.shawlaf.varlight.fabric.persistence;
 import me.shawlaf.varlight.fabric.VarLightMod;
 import me.shawlaf.varlight.persistence.LightPersistFailedException;
 import me.shawlaf.varlight.persistence.nls.NLSFile;
-import me.shawlaf.varlight.util.ChunkCoords;
-import me.shawlaf.varlight.util.IntPosition;
-import me.shawlaf.varlight.util.RegionCoords;
+import me.shawlaf.varlight.util.pos.ChunkPosition;
+import me.shawlaf.varlight.util.pos.IntPosition;
+import me.shawlaf.varlight.util.pos.RegionCoords;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.MutableWorldProperties;
 import net.minecraft.world.level.ServerWorldProperties;
 
 import java.io.File;
@@ -84,14 +83,14 @@ public class WorldLightSourceManager {
     public NLSFile getNLSFile(RegionCoords regionCoords) {
         synchronized (worldMap) {
             if (!worldMap.containsKey(regionCoords)) {
-                File file = new File(mod.getLightStorageManager().getVarLightSaveDirectory(world), String.format(NLSFile.FILE_NAME_FORMAT, regionCoords.x, regionCoords.z));
+                File file = new File(mod.getLightStorageManager().getVarLightSaveDirectory(world), String.format(NLSFile.FILE_NAME_FORMAT, regionCoords.x(), regionCoords.z()));
                 NLSFile nlsFile;
 
                 try {
                     if (file.exists()) {
                         nlsFile = NLSFile.existingFile(file);
                     } else {
-                        nlsFile = NLSFile.newFile(file, regionCoords.x, regionCoords.z);
+                        nlsFile = NLSFile.newFile(file, regionCoords.x(), regionCoords.z());
                     }
                 } catch (IOException e) {
                     throw new LightPersistFailedException(e);
@@ -119,14 +118,14 @@ public class WorldLightSourceManager {
                     throw new LightPersistFailedException(e);
                 }
 
-                List<ChunkCoords> affected = nlsFile.getAffectedChunks();
+                List<ChunkPosition> affected = nlsFile.getAffectedChunks();
 
-                if (affected.size() == 0) {
-                    if (nlsFile.file.exists()) {
-                        if (!nlsFile.file.delete()) {
-                            throw new LightPersistFailedException("Could not delete file " + nlsFile.file.getAbsolutePath());
+                if (affected.isEmpty()) {
+                    if (nlsFile._file.exists()) {
+                        if (!nlsFile._file.delete()) {
+                            throw new LightPersistFailedException("Could not delete file " + nlsFile._file.getAbsolutePath());
                         } else {
-                            mod.getLogger().debug(String.format("Deleted File %s", nlsFile.file.getName()));
+                            mod.getLogger().debug(String.format("Deleted File %s", nlsFile._file.getName()));
 
                             ++deleted;
                         }
@@ -138,8 +137,8 @@ public class WorldLightSourceManager {
 
                 boolean anyLoaded = false;
 
-                for (ChunkCoords chunkCoords : affected) {
-                    if (world.isChunkLoaded(chunkCoords.x, chunkCoords.z)) {
+                for (ChunkPosition chunkCoords : affected) {
+                    if (world.isChunkLoaded(chunkCoords.x(), chunkCoords.z())) {
                         anyLoaded = true;
                         break;
                     }
@@ -151,14 +150,14 @@ public class WorldLightSourceManager {
             }
 
             for (RegionCoords regionCoords : regionsToUnload) {
-                worldMap.remove(regionCoords).unload();
+                worldMap.remove(regionCoords);
             }
         }
 
         String msg = String.format("Light Sources persisted for World \"%s\", Files modified: %d, Files deleted: %d", ((ServerWorldProperties) world.getLevelProperties()).getLevelName(), modified, deleted);
 
         if (source != null) {
-            source.sendMessage(new LiteralText("[VarLight] " + msg), false);
+            source.sendMessage(Text.literal("[VarLight] " + msg), false);
         }
 
         mod.getLogger().debug(msg);

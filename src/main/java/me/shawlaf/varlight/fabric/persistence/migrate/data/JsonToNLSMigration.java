@@ -1,10 +1,10 @@
 package me.shawlaf.varlight.fabric.persistence.migrate.data;
 
 import com.google.gson.Gson;
-import me.shawlaf.varlight.persistence.BasicCustomLightSource;
 import me.shawlaf.varlight.persistence.migrate.Migration;
 import me.shawlaf.varlight.persistence.nls.NLSFile;
-import me.shawlaf.varlight.util.FileUtil;
+import me.shawlaf.varlight.persistence.old.BasicCustomLightSource;
+import me.shawlaf.varlight.util.io.FileUtil;
 
 import java.io.File;
 import java.io.FileReader;
@@ -47,7 +47,7 @@ public class JsonToNLSMigration implements Migration<File> {
             nlsFile.setCustomLuminance(bcls.getPosition(), bcls.getCustomLuminance());
         }
 
-        nlsFile.saveAndUnload();
+        nlsFile.save();
 
         if (!jsonFile.delete()) {
             throw new IOException("Failed to run migrations, could not delete File \"" + jsonFile.getAbsolutePath() + "\"");

@@ -8,15 +8,16 @@ import me.shawlaf.varlight.fabric.LightUpdateResult;
 import me.shawlaf.varlight.fabric.VarLightMod;
 import me.shawlaf.varlight.fabric.command.VarLightSubCommand;
 import me.shawlaf.varlight.fabric.util.OpPermissionLevel;
-import net.minecraft.command.arguments.BlockPosArgumentType;
-import net.minecraft.command.arguments.PosArgument;
+import net.minecraft.command.CommandRegistryAccess;
+import net.minecraft.command.argument.BlockPosArgumentType;
+import net.minecraft.command.argument.PosArgument;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
-import static net.minecraft.command.arguments.BlockPosArgumentType.blockPos;
+import static net.minecraft.command.argument.BlockPosArgumentType.blockPos;
 
 public class VarLightCommandUpdate extends VarLightSubCommand {
     public VarLightCommandUpdate(VarLightMod mod) {
@@ -24,7 +25,7 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
     }
 
     @Override
-    public LiteralArgumentBuilder<ServerCommandSource> build(LiteralArgumentBuilder<ServerCommandSource> root) {
+    public LiteralArgumentBuilder<ServerCommandSource> build(LiteralArgumentBuilder<ServerCommandSource> root, CommandRegistryAccess registryAccess) {
         root.requires(
                 source -> source.hasPermissionLevel(OpPermissionLevel.MANAGE_GAME)
         );
@@ -46,7 +47,7 @@ public class VarLightCommandUpdate extends VarLightSubCommand {
         LightUpdateResult lightUpdateResult = mod.getLightModifier().setLuminance((context.getSource().getEntity() instanceof PlayerEntity ? context.getSource().getPlayer() : null), context.getSource().getWorld(), pos, lightLevel);
 
         if (lightUpdateResult.isSuccess()) {
-            context.getSource().sendFeedback(new LiteralText("Updated Light level at Position [" + pos.toShortString() + "] to " + lightLevel), true);
+            context.getSource().sendFeedback(() -> Text.literal("Updated Light level at Position [" + pos.toShortString() + "] to " + lightLevel), true);
         } else {
             context.getSource().sendError(lightUpdateResult.getMessage());
         }

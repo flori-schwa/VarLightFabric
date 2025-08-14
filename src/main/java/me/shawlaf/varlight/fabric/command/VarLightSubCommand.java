@@ -2,6 +2,7 @@ package me.shawlaf.varlight.fabric.command;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import me.shawlaf.varlight.fabric.VarLightMod;
+import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.ServerCommandSource;
 
 public abstract class VarLightSubCommand {
@@ -18,6 +19,6 @@ public abstract class VarLightSubCommand {
         return name;
     }
 
-    public abstract LiteralArgumentBuilder<ServerCommandSource> build(LiteralArgumentBuilder<ServerCommandSource> root);
+    public abstract LiteralArgumentBuilder<ServerCommandSource> build(LiteralArgumentBuilder<ServerCommandSource> root, CommandRegistryAccess registryAccess);
 
 }

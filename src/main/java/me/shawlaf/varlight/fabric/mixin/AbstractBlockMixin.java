@@ -1,18 +1,19 @@
 package me.shawlaf.varlight.fabric.mixin;
 
 import me.shawlaf.varlight.fabric.VarLightMod;
+import me.shawlaf.varlight.util.pos.IntPosition;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.BlockState;
+import net.minecraft.component.type.ItemEnchantmentsComponent;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.loot.context.LootContext;
 import net.minecraft.loot.context.LootContextParameters;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.loot.context.LootWorldContext;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -27,7 +28,7 @@ public class AbstractBlockMixin {
             at = @At("RETURN"),
             method = "getDroppedStacks"
     )
-    public void getDroppedStacks(BlockState state, LootContext.Builder builder, CallbackInfoReturnable<List<ItemStack>> cir) {
+    public void getDroppedStacks(BlockState state, LootWorldContext.Builder builder, CallbackInfoReturnable<List<ItemStack>> cir) {
         List<ItemStack> drops = cir.getReturnValue();
 
         if (drops.isEmpty()) {
@@ -35,9 +36,10 @@ public class AbstractBlockMixin {
         }
 
         ServerWorld world = builder.getWorld();
-        BlockPos pos = builder.get(LootContextParameters.POSITION);
+        Vec3d pos = builder.get(LootContextParameters.ORIGIN);
+        IntPosition intPos = new IntPosition((int) pos.x, (int) pos.y, (int) pos.z); // TODO better
 
-        int customLuminance = getMod().getLightStorageManager().getManager(world).getCustomLuminance(pos, 0);
+        int customLuminance = getMod().getLightStorageManager().getManager(world).getCustomLuminance(intPos, 0);
 
         if (customLuminance == 0) {
             return;
@@ -48,23 +50,8 @@ public class AbstractBlockMixin {
         if (tool.isEmpty()) {
             drops.add(new ItemStack(Items.GLOWSTONE_DUST, 1));
         } else {
-            int silkTouchLevel = 0, fortuneLevel = 0;
-
-            ListTag enchantments = tool.getEnchantments();
-
-            String silkTouchId = String.valueOf(Registry.ENCHANTMENT.getId(Enchantments.SILK_TOUCH));
-            String fortuneId = String.valueOf(Registry.ENCHANTMENT.getId(Enchantments.FORTUNE));
-
-            for (int i = 0; i < enchantments.size(); i++) {
-                CompoundTag enchantment = enchantments.getCompound(i);
-                String id = enchantment.getString("id");
-
-                if (silkTouchId.equals(id)) {
-                    silkTouchLevel = enchantment.getShort("lvl");
-                } else if (fortuneId.equals(id)) {
-                    fortuneLevel = enchantment.getShort("lvl");
-                }
-            }
+            final int silkTouchLevel = EnchantmentHelper.getLevel(world.getRegistryManager().getOrThrow(RegistryKeys.ENCHANTMENT).getOrThrow(Enchantments.SILK_TOUCH), tool);
+            final int fortuneLevel = EnchantmentHelper.getLevel(world.getRegistryManager().getOrThrow(RegistryKeys.ENCHANTMENT).getOrThrow(Enchantments.FORTUNE), tool);
 
             if (silkTouchLevel > 0) {
                 for (ItemStack drop : drops) { // Should in theory be only one, but /shrug

@@ -7,24 +7,27 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import me.shawlaf.varlight.fabric.VarLightMod;
 import me.shawlaf.varlight.fabric.command.VarLightSubCommand;
 import me.shawlaf.varlight.fabric.util.OpPermissionLevel;
+import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.EntitySelector;
-import net.minecraft.command.arguments.ItemStackArgument;
+import net.minecraft.command.argument.ItemStackArgument;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.LiteralText;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.text.Text;
 
 import java.util.List;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
-import static net.minecraft.command.arguments.EntityArgumentType.players;
-import static net.minecraft.command.arguments.ItemStackArgumentType.itemStack;
+import static net.minecraft.command.argument.EntityArgumentType.players;
+import static net.minecraft.command.argument.ItemStackArgumentType.itemStack;
 
 public class VarLightCommandGive extends VarLightSubCommand {
 
@@ -34,14 +37,14 @@ public class VarLightCommandGive extends VarLightSubCommand {
     }
 
     @Override
-    public LiteralArgumentBuilder<ServerCommandSource> build(LiteralArgumentBuilder<ServerCommandSource> root) {
+    public LiteralArgumentBuilder<ServerCommandSource> build(LiteralArgumentBuilder<ServerCommandSource> root, CommandRegistryAccess registryAccess) {
 
         root.requires((scs) -> scs.hasPermissionLevel(OpPermissionLevel.MANAGE_GAME));
 
         root.then(
                 RequiredArgumentBuilder.<ServerCommandSource, EntitySelector>argument("targets", players())
                         .then(
-                                RequiredArgumentBuilder.<ServerCommandSource, ItemStackArgument>argument("item", itemStack())
+                                RequiredArgumentBuilder.<ServerCommandSource, ItemStackArgument>argument("item", itemStack(registryAccess))
                                         .then(
                                                 RequiredArgumentBuilder.<ServerCommandSource, Integer>argument("lightlevel", integer(1, 15))
                                                         .executes(c -> execute(c, 1))
@@ -61,7 +64,7 @@ public class VarLightCommandGive extends VarLightSubCommand {
         ItemStackArgument stack = context.getArgument("item", ItemStackArgument.class);
 
         if (!(stack.getItem() instanceof BlockItem)) {
-            context.getSource().sendError(new LiteralText(Registry.ITEM.getId(stack.getItem()).toString() + " is not a block!"));
+            context.getSource().sendError(Text.literal(Registries.ITEM.getId(stack.getItem()) + " is not a block!"));
             return 1;
         }
 
@@ -80,7 +83,7 @@ public class VarLightCommandGive extends VarLightSubCommand {
 
                 ItemStack itemStack = mod.getGlowingBlockCreator().makeGlowing(stack.createStack(toGive, false), lightLevel);
 
-                boolean bl = spe.inventory.insertStack(itemStack);
+                boolean bl = spe.getInventory().insertStack(itemStack);
 
                 ItemEntity itemEntity;
 
@@ -93,7 +96,7 @@ public class VarLightCommandGive extends VarLightSubCommand {
                         itemEntity.setDespawnImmediately();
                     }
 
-                    spe.world.playSound(null, spe.getX(), spe.getY(), spe.getZ(), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2F, ((spe.getRandom().nextFloat() - spe.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                    spe.getWorld().playSound(null, spe.getX(), spe.getY(), spe.getZ(), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2F, ((spe.getRandom().nextFloat() - spe.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F);
                     spe.playerScreenHandler.sendContentUpdates();
                 } else {
                     itemEntity = spe.dropItem(itemStack, false);

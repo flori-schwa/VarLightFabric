@@ -11,19 +11,10 @@ public class PlayerUtil {
     }
 
     public static ItemStack getStackInHand(PlayerEntity player, Hand hand) {
-        switch (hand) {
-            case MAIN_HAND: {
-                return player.inventory.getMainHandStack();
-            }
-
-            case OFF_HAND: {
-                return player.inventory.offHand.get(0);
-            }
-
-            default: {
-                throw new IllegalStateException("More than 2 Hands???");
-            }
-        }
+        return switch (hand) {
+            case MAIN_HAND -> player.getMainHandStack();
+            case OFF_HAND -> player.getOffHandStack();
+        };
     }
 
 }

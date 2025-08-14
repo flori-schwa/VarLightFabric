@@ -8,12 +8,13 @@ import me.shawlaf.varlight.fabric.VarLightMod;
 import me.shawlaf.varlight.fabric.command.VarLightSubCommand;
 import me.shawlaf.varlight.fabric.util.OpPermissionLevel;
 import net.minecraft.block.pattern.CachedBlockPosition;
-import net.minecraft.command.arguments.BlockPosArgumentType;
-import net.minecraft.command.arguments.BlockPredicateArgumentType.BlockPredicate;
-import net.minecraft.command.arguments.PosArgument;
+import net.minecraft.command.CommandRegistryAccess;
+import net.minecraft.command.argument.BlockPosArgumentType;
+import net.minecraft.command.argument.BlockPredicateArgumentType;
+import net.minecraft.command.argument.PosArgument;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
@@ -24,9 +25,9 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
-import static net.minecraft.command.arguments.BlockPosArgumentType.blockPos;
-import static net.minecraft.command.arguments.BlockPredicateArgumentType.blockPredicate;
-import static net.minecraft.command.arguments.BlockPredicateArgumentType.getBlockPredicate;
+import static net.minecraft.command.argument.BlockPosArgumentType.blockPos;
+import static net.minecraft.command.argument.BlockPredicateArgumentType.blockPredicate;
+import static net.minecraft.command.argument.BlockPredicateArgumentType.getBlockPredicate;
 
 public class VarLightCommandFill extends VarLightSubCommand {
     public VarLightCommandFill(VarLightMod mod) {
@@ -34,7 +35,7 @@ public class VarLightCommandFill extends VarLightSubCommand {
     }
 
     @Override
-    public LiteralArgumentBuilder<ServerCommandSource> build(LiteralArgumentBuilder<ServerCommandSource> root) {
+    public LiteralArgumentBuilder<ServerCommandSource> build(LiteralArgumentBuilder<ServerCommandSource> root, CommandRegistryAccess registryAccess) {
 
         root.requires(scs -> scs.hasPermissionLevel(OpPermissionLevel.MANAGE_GAME));
 
@@ -49,20 +50,20 @@ public class VarLightCommandFill extends VarLightSubCommand {
                                                         .then(
                                                                 LiteralArgumentBuilder.<ServerCommandSource>literal("include")
                                                                         .then(
-                                                                                RequiredArgumentBuilder.<ServerCommandSource, BlockPredicate>argument("include filter", blockPredicate())
+                                                                                RequiredArgumentBuilder.<ServerCommandSource, BlockPredicateArgumentType.BlockPredicate>argument("include filter", blockPredicate(registryAccess))
                                                                                         .executes(
                                                                                                 c -> execute(c, getBlockPredicate(c, "include filter"))
                                                                                         )
                                                                         )
                                                         ).then(
-                                                        LiteralArgumentBuilder.<ServerCommandSource>literal("exclude")
-                                                                .then(
-                                                                        RequiredArgumentBuilder.<ServerCommandSource, BlockPredicate>argument("exclude filter", blockPredicate())
-                                                                                .executes(
-                                                                                        c -> execute(c, getBlockPredicate(c, "exclude filter").negate())
-                                                                                )
-                                                                )
-                                                )
+                                                                LiteralArgumentBuilder.<ServerCommandSource>literal("exclude")
+                                                                        .then(
+                                                                                RequiredArgumentBuilder.<ServerCommandSource, BlockPredicateArgumentType.BlockPredicate>argument("exclude filter", blockPredicate(registryAccess))
+                                                                                        .executes(
+                                                                                                c -> execute(c, getBlockPredicate(c, "exclude filter").negate())
+                                                                                        )
+                                                                        )
+                                                        )
 
                                         )
                         )
@@ -89,7 +90,7 @@ public class VarLightCommandFill extends VarLightSubCommand {
 
         int lightLevel = context.getArgument("light level", int.class);
 
-        BlockBox blockBox = new BlockBox(from, to);
+        BlockBox blockBox = BlockBox.create(from, to);
 
         Iterator<BlockPos> iterator = BlockPos.iterate(from, to).iterator();
 
@@ -119,15 +120,19 @@ public class VarLightCommandFill extends VarLightSubCommand {
             mod.getLightModifier().updateLight(context.getSource().getWorld(), chunkPos);
         }
 
+        final int finalSucceeded = succeeded;
+        final int finalSkipped = skipped;
+        final int finalFailed = failed;
+
         context.getSource().sendFeedback(
-                new LiteralText(
+                () -> Text.literal(
                         String.format("Successfully updated %d Light sources in Region [%s] to [%s]. (Total blocks: %d, Skipped Blocks: %d, Failed Blocks: %d)",
-                                succeeded,
+                                finalSucceeded,
                                 from.toShortString(),
                                 to.toShortString(),
                                 blockBox.getBlockCountX() * blockBox.getBlockCountY() * blockBox.getBlockCountZ(),
-                                skipped,
-                                failed
+                                finalSkipped,
+                                finalFailed
                         )
                 ),
                 true
